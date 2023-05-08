@@ -1,5 +1,9 @@
 from scapy.all import *
 from scapy.layers.dns import DNS, DNSQR
+from scapy.layers.inet import IP
+
+HOST_NAME = socket.gethostname()
+IP_ADDRESS = socket.gethostbyname(HOST_NAME)
 
 
 class Sniffer:
@@ -8,10 +12,10 @@ class Sniffer:
         self.queue = queue
 
     def fil(self, packet1):
-        return DNS in packet1 and packet1[DNS].opcode == 0 and packet1[DNS].ancount == 0 and packet1.dport == 53 and \
-               packet1[DNS].nscount == 0 and packet1[DNS].arcount == 0 and packet1[DNSQR][0].qtype == 1 \
-               and packet1[DNS].qr == 0
-               # and packet1[DNSQR].qname == 'ynet.co.il.'.encode()
+        return DNS in packet1 and IP in packet1 and packet1[IP].src != IP_ADDRESS and packet1[DNS].opcode == 0 \
+               and packet1[DNS].qr == 0 and packet1[DNS].ancount == 0 and packet1.dport == 53 and \
+               packet1[DNS].nscount == 0 and packet1[DNS].arcount == 0 and packet1[DNSQR][0].qtype == 1
+        # and packet1[DNSQR].qname == 'ynet.co.il.'.encode()
 
     def add_to_queue(self, packet1):
         if packet not in self.queue:

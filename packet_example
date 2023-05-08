@@ -1,0 +1,48 @@
+###[ Ethernet ]###
+  dst       = 40:b0:34:3f:8a:09
+  src       = 18:60:24:97:2d:7f
+  type      = IPv4
+###[ IP ]###
+     version   = 4
+     ihl       = 5
+     tos       = 0x0
+     len       = 68
+     id        = 20912
+     flags     =
+     frag      = 0
+     ttl       = 128
+     proto     = udp
+     chksum    = 0x7633
+     src       = 172.16.11.116
+     dst       = 172.16.15.49
+     \options   \
+###[ UDP ]###
+        sport     = 62481
+        dport     = domain
+        len       = 48
+        chksum    = 0x63ab
+###[ DNS ]###
+           id        = 2
+           qr        = 0
+           opcode    = QUERY
+           aa        = 0
+           tc        = 0
+           rd        = 1
+           ra        = 0
+           z         = 0
+           ad        = 0
+           cd        = 0
+           rcode     = ok
+           qdcount   = 1
+           ancount   = 0
+           nscount   = 0
+           arcount   = 0
+           \qd        \
+            |###[ DNS Question Record ]###
+            |  qname     = 'ynet.co.il.localdomain.'
+            |  qtype     = A
+            |  qclass    = IN
+           an        = None
+           ns        = None
+           ar        = None
+

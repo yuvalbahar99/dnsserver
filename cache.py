@@ -1,11 +1,11 @@
 import sqlite3
 from sqlite3 import Error
-import logging
 from datetime import datetime
+# import logging
 
-DB_FILE_LOCATION = 'C:\\Users\\yuval\\OneDrive\\Desktop\\11th grade\\cyber\\dnsserver\\cacheinfo.db'
-FORMAT = '%(asctime)s %(levelname)s %(threadName)s %(message)s'
-FILENAMELOG = 'cachelog.log'
+DB_FILE_LOCATION = 'C:\\Users\\cyber\\PycharmProjects\\DNS\\cacheinfo.db'
+# FORMAT = '%(asctime)s %(levelname)s %(threadName)s %(message)s'
+# FILENAMELOG = 'cachelog.log'
 
 
 class Cache:
@@ -39,10 +39,10 @@ class Cache:
             cursor.execute("INSERT INTO cache_table (ip, domain, ttl, type) VALUES (?, ?, ?, ?)",
                            (ip, domain, ttl, type))
             conn.commit()
-            logging.debug("Row inserted")
+            # logging.debug("Row inserted")
 
     """
-    def validate_user(self, username, password):
+    def validate_?(self, username, password):
         conn = self.create_connection()
         with conn:
             query = "SELECT * FROM users WHERE username = ? AND password = ?"
@@ -58,9 +58,9 @@ class Cache:
             cursor.execute(query, (ip,))
             result = cursor.fetchone()
             if result is not None:
-                logging.debug(ip + "exist in cache")
+                # logging.debug(ip + "exist in cache")
                 return True
-            logging.debug(ip + "does not exist in cache")
+            # logging.debug(ip + "does not exist in cache")
             return False
 
     def check_domain_exists(self, domain):
@@ -71,9 +71,9 @@ class Cache:
             cursor.execute(query, (domain,))
             result = cursor.fetchone()
             if result is not None:
-                logging.debug(domain + "exist in cache")
+                # logging.debug(domain + "exist in cache")
                 return True
-            logging.debug(domain + "does not exist in cache")
+            # logging.debug(domain + "does not exist in cache")
             return False
 
     def get_ip_info(self, ip):
@@ -121,6 +121,8 @@ class Cache:
             for row in rows:
                 print(row)
 
-
-if __name__ == '__main__':
-    logging.basicConfig(filename=FILENAMELOG, level=logging.DEBUG, format=FORMAT)
+    def delete_all_records(self):
+        conn = self.create_connection()
+        with conn:
+            conn.execute("DELETE FROM cache_table")
+            # logging.info("All records deleted from cache_table")
