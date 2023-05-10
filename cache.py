@@ -1,9 +1,10 @@
+import logging
 import sqlite3
 from sqlite3 import Error
 from datetime import datetime
 # import logging
 
-DB_FILE_LOCATION = 'C:\\Users\\cyber\\PycharmProjects\\DNS\\cacheinfo.db'
+DB_FILE_LOCATION = 'cacheinfo.db'
 # FORMAT = '%(asctime)s %(levelname)s %(threadName)s %(message)s'
 # FILENAMELOG = 'cachelog.log'
 
@@ -24,12 +25,12 @@ class Cache:
         conn = self.create_connection()
         with conn:
             cache_table = '''CREATE TABLE IF NOT EXISTS cache_table (
-                             id INTEGER PRIMARY KEY AUTOINCREMENT,
-                             ip TEXT NOT NULL,
-                             domain TEXT NOT NULL,
-                             ttl INTEGER NOT NULL,
-                             type TEXT NOT NULL                        
-                        );'''
+                                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                ip TEXT NOT NULL,
+                                domain TEXT NOT NULL,
+                                ttl TEXT NOT NULL,
+                                type TEXT NOT NULL                        
+                            );'''
             conn.execute(cache_table)
 
     def insert_row(self, ip, domain, ttl, type):
@@ -54,7 +55,7 @@ class Cache:
         conn = self.create_connection()
         with conn:
             cursor = conn.cursor()
-            query = "SELECT * FROM cache_table WHERE ip = ?"
+            query = "SELECT * FROM cache_table WHERE ip = ? LIMIT 1"
             cursor.execute(query, (ip,))
             result = cursor.fetchone()
             if result is not None:
@@ -67,7 +68,7 @@ class Cache:
         conn = self.create_connection()
         with conn:
             cursor = conn.cursor()
-            query = "SELECT * FROM cache_table WHERE domain = ?"
+            query = "SELECT * FROM cache_table WHERE domain = ? LIMIT 1"
             cursor.execute(query, (domain,))
             result = cursor.fetchone()
             if result is not None:
@@ -80,21 +81,18 @@ class Cache:
         if self.check_ip_exists(ip):
             conn = self.create_connection()
             with conn:
-                cursor = conn.cursor()
                 query = "SELECT * FROM cache_table WHERE ip = ?"
-                conn.execute(query, (ip,))
-                result = cursor.fetchone()
+                result = conn.execute(query, (ip,)).fetchone()
                 return result
         return None
 
     def get_domain_info(self, domain):
         if self.check_domain_exists(domain):
+            print('exist')
             conn = self.create_connection()
             with conn:
-                cursor = conn.cursor()
                 query = "SELECT * FROM cache_table WHERE domain = ?"
-                conn.execute(query, (domain,))
-                result = cursor.fetchone()
+                result = conn.execute(query, (domain,)).fetchone()
                 return result
         return None
 

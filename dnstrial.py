@@ -1,4 +1,6 @@
 import concurrent.futures
+import logging
+from time import sleep
 from scapy.all import *
 from scapy.layers.dns import DNS, DNSQR, DNSRR
 from scapy.layers.inet import IP, UDP
@@ -7,10 +9,12 @@ from cache import Cache
 from datetime import datetime, timedelta
 
 LIBOT = 40
-DNS_IP = '172.16.255.254'
+# DNS_IP = '172.16.255.254'
+DNS_IP = '10.0.0.138'
 queue_reqs = []
 FORMAT = '%(asctime)s %(levelname)s %(threadName)s %(message)s'
 FILENAMELOG = 'dnslog.log'
+date_format = '%Y-%m-%d %H:%M:%S.%f'
 
 
 def remove_from_queue():
@@ -43,9 +47,12 @@ def handle_request(current_packet):
 
 
 def search_domain_in_cache(cache):
+    cache.delete_expired_records()
     current_packet = remove_from_queue()
     domain = current_packet[DNSQR].qname.decode()
+    # cache_data = cache.get_domain_info(domain)  # if domain id not exist, get_domain_info returns None
     if not cache.check_domain_exists(domain):
+        logging.debug(domain + 'before handle - not in cache')
         response = handle_request(current_packet)
         if response is not None:
             into_cache(response, cache, domain)
@@ -56,43 +63,61 @@ def search_domain_in_cache(cache):
 def into_cache(current_packet, cache, domain):
     text_ips = ""
     for answer in current_packet[DNS].an:
-        ip_address = answer.rdata
-        text_ips += socket.inet_ntoa(ip_address) + ','
-    pac_type = current_packet[DNS].an.type.decode
+        ip_address = str(answer.rdata)
+        text_ips += ip_address + ','
+    pac_type = current_packet[DNS].an.type
     seconds_to_leave = current_packet[DNS].an.ttl
     now = datetime.now()
     delta = timedelta(seconds=seconds_to_leave)
     ttl = now + delta
-    cache.insert_row(text_ips[:-1], domain, ttl, pac_type)
+    cache.insert_row(text_ips[:-1], domain, str(ttl), str(pac_type))
+    logging.debug(domain + ' into the cache')
+    cache.print_cache_table()
 
 
 def out_of_cache(current_packet, cache, domain):
+    packet_id = current_packet[DNS].id
+    logging.debug(domain + 'need to br out of cache')
     cache_data = cache.get_domain_info(domain)
-    ip_text = cache_data[0]
-    ip_addr_list = []
-    if "," in ip_text:
-        ip_list = ip_text.split(',')
-        for ip_addr in ip_list:
-            ip_addr_list.append(socket.inet_aton(ip_addr))
-    else:
-        ip_addr_list.append(socket.inet_aton(ip_text))
-    ttl = cache_data[2]
-    pac_type = cache_data[3]
-    now = datetime.now()
-    seconds_to_leave = (ttl - now).total_seconds()
-    dns_packet = DNS(qr=1, aa=1, ra=1, ancount=1, qd=DNSQR(qname=domain, qtype=pac_type),
-                     an=DNSRR(rrname=domain, type=pac_type, rdata=ip_addr_list, ttl=seconds_to_leave))
-    ip_client = current_packet[IP].src
-    res_client = IP(dst=ip_client) / UDP(sport=53, dport=current_packet[UDP].sport) / dns_packet
-    send(res_client)
+    logging.debug('after out of cache')
+    logging.debug(cache_data)
+    if cache_data:
+        logging.debug(domain + ' out of the cache')
+        ip_text = cache_data[1]
+        if "," in ip_text:
+            ip_addr_list = ip_text.split(',')
+            count = len(ip_addr_list)
+        else:
+            ip_addr_list = ip_text
+            count = 1
+        pac_type = int(cache_data[4])
+        ttl = datetime.strptime(cache_data[3], date_format)
+        now = datetime.now()
+        seconds_to_leave = int((ttl - now).total_seconds())
+        dns_packet = DNS(qr=1, opcode="QUERY", aa=1, ra=1, ancount=count, id=packet_id, qd=DNSQR(qname=domain, qtype=pac_type),
+                         an=DNSRR(rrname=domain, type=pac_type, rdata=ip_addr_list, ttl=seconds_to_leave))
+        ip_client = current_packet[IP].src
+        logging.debug(dns_packet.show())
+        res_client = IP(dst=ip_client) / UDP(sport=53, dport=current_packet[UDP].sport) / dns_packet
+        logging.debug('start packet')
+        logging.debug(res_client.show())
+        logging.debug('end packet')
+        send(res_client)
 
 
 def create_cache():
     cache = Cache()
     cache.create_connection()
     cache.create_tables()
-    cache.delete_all_records()
+    cache.delete_expired_records()
+    cache.print_cache_table()
     return cache
+
+"""
+def handle_ttl(cache):
+    cache.delete_expired_records()
+    # sleep(1)
+"""
 
 
 def main():
@@ -100,6 +125,10 @@ def main():
     sniffer = Sniffer(queue_reqs)
     sniff_thread = threading.Thread(target=sniffer.sniffing)
     sniff_thread.start()
+    """
+    ttl_thread = threading.Thread(target=handle_ttl(cache))
+    ttl_thread.start()
+    """
     with concurrent.futures.ThreadPoolExecutor(max_workers=LIBOT) as executor:
         while True:
             try:

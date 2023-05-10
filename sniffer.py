@@ -1,9 +1,11 @@
+import logging
 from scapy.all import *
 from scapy.layers.dns import DNS, DNSQR
 from scapy.layers.inet import IP
+import socket
 
 HOST_NAME = socket.gethostname()
-IP_ADDRESS = socket.gethostbyname(HOST_NAME)
+IP_ADDRESS = socket.getaddrinfo(HOST_NAME, None, socket.AF_INET)[0][4][0]
 
 
 class Sniffer:
@@ -24,4 +26,6 @@ class Sniffer:
             logging.debug(str(packet1[DNSQR].qname) + ' - after into requests queue')
 
     def sniffing(self):
+        logging.debug('sniffing')
         sniff(lfilter=self.fil, prn=self.add_to_queue)
+
