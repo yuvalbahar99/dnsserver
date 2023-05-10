@@ -10,7 +10,6 @@ IP_ADDRESS = socket.getaddrinfo(HOST_NAME, None, socket.AF_INET)[0][4][0]
 
 class Sniffer:
     def __init__(self, queue):
-        super().__init__()
         self.queue = queue
 
     def fil(self, packet1):

@@ -1,6 +1,4 @@
 import concurrent.futures
-import logging
-from time import sleep
 from scapy.all import *
 from scapy.layers.dns import DNS, DNSQR, DNSRR
 from scapy.layers.inet import IP, UDP
@@ -46,18 +44,17 @@ def handle_request(current_packet):
     return None
 
 
-def search_domain_in_cache(cache):
-    cache.delete_expired_records()
+def search_domain_in_tables(cache):
     current_packet = remove_from_queue()
     domain = current_packet[DNSQR].qname.decode()
-    # cache_data = cache.get_domain_info(domain)  # if domain id not exist, get_domain_info returns None
-    if not cache.check_domain_exists(domain):
+    cache_data = cache.get_domain_info(domain)  # if domain id not exist, get_domain_info returns None
+    if cache_data:
+        out_of_cache(current_packet, cache_data, domain)
+    else:
         logging.debug(domain + 'before handle - not in cache')
         response = handle_request(current_packet)
         if response is not None:
             into_cache(response, cache, domain)
-    else:
-        out_of_cache(current_packet, cache, domain)
 
 
 def into_cache(current_packet, cache, domain):
@@ -75,10 +72,9 @@ def into_cache(current_packet, cache, domain):
     cache.print_cache_table()
 
 
-def out_of_cache(current_packet, cache, domain):
+def out_of_cache(current_packet, cache_data, domain):
     packet_id = current_packet[DNS].id
     logging.debug(domain + 'need to br out of cache')
-    cache_data = cache.get_domain_info(domain)
     logging.debug('after out of cache')
     logging.debug(cache_data)
     if cache_data:
@@ -94,7 +90,8 @@ def out_of_cache(current_packet, cache, domain):
         ttl = datetime.strptime(cache_data[3], date_format)
         now = datetime.now()
         seconds_to_leave = int((ttl - now).total_seconds())
-        dns_packet = DNS(qr=1, opcode="QUERY", aa=1, ra=1, ancount=count, id=packet_id, qd=DNSQR(qname=domain, qtype=pac_type),
+        dns_packet = DNS(qr=1, opcode="QUERY", aa=1, ra=1, ancount=count, id=packet_id,
+                         qd=DNSQR(qname=domain, qtype=pac_type),
                          an=DNSRR(rrname=domain, type=pac_type, rdata=ip_addr_list, ttl=seconds_to_leave))
         ip_client = current_packet[IP].src
         logging.debug(dns_packet.show())
@@ -113,27 +110,17 @@ def create_cache():
     cache.print_cache_table()
     return cache
 
-"""
-def handle_ttl(cache):
-    cache.delete_expired_records()
-    # sleep(1)
-"""
-
 
 def main():
     cache = create_cache()
     sniffer = Sniffer(queue_reqs)
     sniff_thread = threading.Thread(target=sniffer.sniffing)
     sniff_thread.start()
-    """
-    ttl_thread = threading.Thread(target=handle_ttl(cache))
-    ttl_thread.start()
-    """
     with concurrent.futures.ThreadPoolExecutor(max_workers=LIBOT) as executor:
         while True:
             try:
                 if queue_reqs:
-                    executor.submit(search_domain_in_cache(cache))
+                    executor.submit(search_domain_in_tables(cache))
             except Exception as e:
                 logging.debug(f'Error m occurred: {e}')
 
