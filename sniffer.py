@@ -27,4 +27,3 @@ class Sniffer:
     def sniffing(self):
         logging.debug('sniffing')
         sniff(lfilter=self.fil, prn=self.add_to_queue)
-

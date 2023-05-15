@@ -2,9 +2,12 @@ import logging
 import sqlite3
 from sqlite3 import Error
 from datetime import datetime
+
 # import logging
 
 CACHE_FILE_LOCATION = 'cacheinfo.db'
+
+
 # FORMAT = '%(asctime)s %(levelname)s %(threadName)s %(message)s'
 # FILENAMELOG = 'cachelog.log'
 
@@ -50,7 +53,7 @@ class Cache:
             query = "SELECT * FROM users WHERE username = ? AND password = ?"
             result = conn.execute(query, (username, password)).fetchone()
             return result is not None
-    
+
     def check_ip_exists(self, ip):
         self.delete_expired_records()
         conn = self.create_connection()
@@ -78,7 +81,7 @@ class Cache:
                 return True
             # logging.debug(domain + "does not exist in cache")
             return False
-    """
+                """
 
     def get_ip_info(self, ip):
         self.delete_expired_records()
@@ -125,3 +128,10 @@ class Cache:
         with conn:
             conn.execute("DELETE FROM cache_table")
             # logging.info("All records deleted from cache_table")
+
+    def delete_row(self, domain):
+        conn = self.create_connection()
+        with conn:
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM cache_table WHERE domain = ?", (domain,))
+        conn.commit()
