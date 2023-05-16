@@ -5,10 +5,9 @@ from tkinter import filedialog
 from tkinter import messagebox
 from PIL import Image, ImageTk
 
-SERVER_IP = '10.0.0.23'
-# SERVER_IP = "172.16.15.49"
-PORT = 8246
-# PC_FILE_PATH = 'pcimage.jpeg'
+# SERVER_IP = '10.0.0.23'
+SERVER_IP = "172.16.15.49"
+PORT = 80
 PC_FILE_PATH = 'pcimage.jpeg'
 
 
@@ -42,6 +41,7 @@ class Client:
         self.client_socket.connect((SERVER_IP, PORT))
         if not address.endswith('.'):
             address += '.'
+
         self.client_socket.send(("*start*" + command + address + "*end*").encode())
         response = self.client_socket.recv(7).decode()
         if response.startswith('*start*'):

@@ -1,7 +1,7 @@
 import logging
 
 TTL = '2123-05-16 18:17:23.198305'
-IP = '1.2.3.4'
+IP = '127.0.0.1'
 TYPE = '1'
 
 
@@ -14,8 +14,6 @@ class ParentalControl:
         conn = self.cache.create_connection()
         with conn:
             cursor = conn.cursor()
-            if self.cache.get_domain_info(domain):
-                self.cache.delete_row(domain)
             self.cache.insert_row(IP, domain, TTL, TYPE)
             conn.commit()
             logging.debug("Row inserted- " + domain)

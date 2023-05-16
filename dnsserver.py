@@ -9,15 +9,15 @@ from parentalcontrol import ParentalControl
 import threading
 
 LIBOT = 40
-# DNS_IP = '172.16.255.254'
-DNS_IP = '10.0.0.138'
+DNS_IP = '172.16.255.254'
+# DNS_IP = '10.0.0.138'
 queue_reqs = []
 FORMAT = '%(asctime)s %(levelname)s %(threadName)s %(message)s'
 FILENAMELOG = 'dnslog.log'
 date_format = '%Y-%m-%d %H:%M:%S.%f'
-PORT = 8246
-SERVER_IP = "10.0.0.23"
-# SERVER_IP = "172.16.15.49"
+PORT = 80
+# SERVER_IP = "10.0.0.23"
+SERVER_IP = "172.16.15.49"
 
 
 def remove_from_queue():
@@ -74,7 +74,7 @@ def into_cache(current_packet, cache, domain):
     ttl = now + delta
     cache.insert_row(text_ips, domain, ttl, pac_type)
     logging.debug(domain + ' into the cache')
-    # cache.print_cache_table()
+    cache.print_cache_table()
 
 
 def out_of_cache(current_packet, cache_data, domain):
@@ -108,7 +108,7 @@ def create_cache():
     cache = Cache()
     cache.create_connection()
     cache.create_tables()
-    cache.delete_all_records()
+    cache.delete_expired_records()
     cache.print_cache_table()
     return cache
 

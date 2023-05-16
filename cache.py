@@ -41,8 +41,11 @@ class Cache:
         conn = self.create_connection()
         with conn:
             cursor = conn.cursor()
-            cursor.execute("INSERT INTO cache_table (ip, domain, ttl, type) VALUES (?, ?, ?, ?)",
-                           (ip, domain, ttl, type))
+            if self.get_domain_info(domain) is not None:
+                self.delete_row(domain)
+            else:
+                cursor.execute("INSERT INTO cache_table (ip, domain, ttl, type) VALUES (?, ?, ?, ?)",
+                               (ip, domain, ttl, type))
             conn.commit()
             # logging.debug("Row inserted")
 
@@ -130,6 +133,7 @@ class Cache:
             # logging.info("All records deleted from cache_table")
 
     def delete_row(self, domain):
+        self.delete_expired_records()
         conn = self.create_connection()
         with conn:
             cursor = conn.cursor()
