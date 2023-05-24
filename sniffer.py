@@ -19,10 +19,9 @@ class Sniffer:
         # and packet1[DNSQR].qname == 'ynet.co.il.'.encode()
 
     def add_to_queue(self, packet1):
-        if packet not in self.queue:
-            logging.debug(str(packet1[DNSQR].qname) + ' - before into requests queue')
-            self.queue.append(packet1)
-            logging.debug(str(packet1[DNSQR].qname) + ' - after into requests queue')
+        logging.debug(str(packet1[DNSQR].qname) + ' - before into requests queue')
+        self.queue.put(packet1)
+        logging.debug(str(packet1[DNSQR].qname) + ' - after into requests queue')
 
     def sniffing(self):
         logging.debug('sniffing')

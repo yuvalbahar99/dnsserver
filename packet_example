@@ -46,3 +46,116 @@
            ns        = None
            ar        = None
 
+--------------------------------------------------------------------
+
+###[ Ethernet ]###
+  dst       = 66:77:88:99:AA:BB
+  src       = 00:11:22:33:44:55
+  type      = 0x800
+###[ IP ]###
+     version   = 4
+     ihl       = 5
+     tos       = 0x0
+     len       = 60
+     id        = 54321
+     flags     =
+     frag      = 0
+     ttl       = 64
+     proto     = udp
+     chksum    = 0x62e4
+     src       = 8.8.8.8
+     dst       = 192.168.0.1
+     \options   \
+###[ UDP ]###
+        sport     = domain
+        dport     = domain
+        len       = 80
+        chksum    = 0x5678
+###[ DNS ]###
+           id        = 1
+           qr        = 1
+           opcode    = QUERY
+           aa        = 0
+           tc        = 0
+           rd        = 1
+           ra        = 0
+           z         = 0
+           ad        = 0
+           cd        = 0
+           rcode     = ok
+           qdcount   = 1
+           ancount   = 1
+           nscount   = 0
+           arcount   = 0
+           \qd        \
+            |###[ DNS Question Record ]###
+            |  qname     = 'example.com.'
+            |  qtype     = A
+            |  qclass    = IN
+           \an        \
+            |###[ DNS Resource Record ]###
+            |  rrname    = 'example.com.'
+            |  type      = A
+            |  rclass    = IN
+            |  ttl       = 3600
+            |  rdlen     = 4
+            |  rdata     = 192.0.2.1
+           ns        = None
+           ar        = None
+
+--------------------------------------------------------------------
+
+###[ Ethernet ]###
+  dst       = 66:77:88:99:AA:BB
+  src       = 00:11:22:33:44:55
+  type      = 0x800
+###[ IP ]###
+     version   = 4
+     ihl       = 5
+     tos       = 0x0
+     len       = 60
+     id        = 54321
+     flags     =
+     frag      = 0
+     ttl       = 64
+     proto     = udp
+     chksum    = 0x62e4
+     src       = 8.8.8.8
+     dst       = 192.168.0.1
+     \options   \
+###[ UDP ]###
+        sport     = domain
+        dport     = domain
+        len       = 80
+        chksum    = 0x5678
+###[ DNS ]###
+           id        = 1
+           qr        = 1
+           opcode    = QUERY
+           aa        = 0
+           tc        = 0
+           rd        = 1
+           ra        = 0
+           z         = 0
+           ad        = 0
+           cd        = 0
+           rcode     = ok
+           qdcount   = 1
+           ancount   = 1
+           nscount   = 0
+           arcount   = 0
+           \qd        \
+            |###[ DNS Question Record ]###
+            |  qname     = '1.0.168.192.in-addr.arpa.'
+            |  qtype     = PTR
+            |  qclass    = IN
+           \an        \
+            |###[ DNS Resource Record ]###
+            |  rrname    = '1.0.168.192'
+            |  type      = PTR
+            |  rclass    = IN
+            |  ttl       = 3600
+            |  rdlen     = 11
+            |  rdata     = 'example.com.'
+           ns        = None
+           ar        = None

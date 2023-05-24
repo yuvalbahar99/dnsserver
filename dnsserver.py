@@ -7,22 +7,23 @@ from cache import Cache
 from datetime import datetime, timedelta
 from parentalcontrol import ParentalControl
 import threading
+import queue
 
 LIBOT = 40
-DNS_IP = '172.16.255.254'
-# DNS_IP = '10.0.0.138'
-queue_reqs = []
+# DNS_IP = '172.16.255.254'
+DNS_IP = '10.0.0.138'
 FORMAT = '%(asctime)s %(levelname)s %(threadName)s %(message)s'
 FILENAMELOG = 'dnslog.log'
 date_format = '%Y-%m-%d %H:%M:%S.%f'
 PORT = 80
-# SERVER_IP = "10.0.0.23"
-SERVER_IP = "172.16.15.49"
+SERVER_IP = "10.0.0.23"
+# SERVER_IP = "172.16.15.49"
+queue_reqs = queue.Queue()
 
 
 def remove_from_queue():
-    if queue_reqs:
-        packet1 = queue_reqs.pop(0)
+    if queue_reqs.qsize() != 0:
+        packet1 = queue_reqs.get()
         logging.debug(str(packet1[DNSQR].qname) + ' - out of requests queue')
         return packet1
     return None
@@ -163,7 +164,7 @@ def main():
     with concurrent.futures.ThreadPoolExecutor(max_workers=LIBOT) as executor:
         while True:
             try:
-                if queue_reqs:
+                if queue_reqs.qsize() != 0:
                     executor.submit(search_domain_in_cache, cache)
             except Exception as e:
                 logging.debug(f'Error m occurred: {e}')
