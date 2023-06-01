@@ -9,7 +9,7 @@ from parentalcontrol import ParentalControl
 import threading
 import queue
 
-LIBOT = 40
+LIBOT = 80
 # DNS_IP = '172.16.255.254'
 DNS_IP = '10.0.0.138'
 FORMAT = '%(asctime)s %(levelname)s %(threadName)s %(message)s'
@@ -22,7 +22,7 @@ queue_reqs = queue.Queue()
 
 
 def remove_from_queue():
-    if queue_reqs.qsize() != 0:
+    if not queue_reqs.empty():
         packet1 = queue_reqs.get()
         logging.debug(str(packet1[DNSQR].qname) + ' - out of requests queue')
         return packet1
@@ -164,7 +164,7 @@ def main():
     with concurrent.futures.ThreadPoolExecutor(max_workers=LIBOT) as executor:
         while True:
             try:
-                if queue_reqs.qsize() != 0:
+                if not queue_reqs.empty():
                     executor.submit(search_domain_in_cache, cache)
             except Exception as e:
                 logging.debug(f'Error m occurred: {e}')
