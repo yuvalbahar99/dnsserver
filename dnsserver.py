@@ -116,6 +116,7 @@ def create_cache():
 
 def handle_client(client_socket, parental_control):
     request = client_socket.recv(7).decode()
+    print(request)
     if request.startswith('*start*'):
         while not request.endswith('*end*'):
             request += client_socket.recv(1).decode()
