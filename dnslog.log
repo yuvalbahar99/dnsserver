@@ -186,3 +186,14 @@
 2023-06-03 01:51:53,835 DEBUG Thread-3 Deleted blocking- mako.co.il
 2023-06-03 01:53:46,643 DEBUG Thread-1 sniffing
 2023-06-03 01:54:44,749 DEBUG Thread-3 Row inserted- mako.co.il.
+2023-06-03 01:58:37,194 DEBUG Thread-1 sniffing
+2023-06-03 01:59:04,963 DEBUG Thread-3 Deleted blocking- mako.co.il.
+2023-06-03 01:59:37,938 DEBUG Thread-1 sniffing
+2023-06-03 02:00:47,797 DEBUG Thread-1 sniffing
+2023-06-03 02:01:06,672 DEBUG Thread-1 sniffing
+2023-06-03 02:02:14,171 DEBUG Thread-1 sniffing
+2023-06-03 02:03:26,822 DEBUG Thread-1 sniffing
+2023-06-03 02:04:25,849 DEBUG Thread-1 sniffing
+2023-06-03 02:05:28,871 DEBUG Thread-4 Row inserted- ynet.
+2023-06-03 02:05:44,484 DEBUG Thread-4 Deleted blocking- ynet.
+2023-06-03 02:06:39,967 DEBUG Thread-1 sniffing

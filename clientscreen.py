@@ -305,10 +305,9 @@ class UserRequestsScreen:
         data_len = int(data_len)
         if data_len > 0:
             server_response = self.client_socket.recv(data_len).decode()
-            if server_response != []:
-                messagebox.showinfo("Message", f"{server_response}")
-            else:
-                messagebox.showinfo("Message", "blocked address list is empty")
+            messagebox.showinfo("Message", f"{server_response}")
+        else:
+            messagebox.showinfo("Message", "blocked addresses list is empty")
 
     def open_add_blocking_screen(self):
         self.user_requests_screen.withdraw()  # הסתרת מסך ההרשמה

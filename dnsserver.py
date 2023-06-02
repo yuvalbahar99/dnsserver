@@ -222,10 +222,10 @@ def view_blocking_list_req(parental_control):
     response_data = ''
     try:
         blocked_list = parental_control.return_block_list()
-        response_data = ''
         for i in blocked_list:
             response_data += i + '\n'
-        response_data = response_data[:-1]
+        if response_data != '':
+            response_data = response_data[:-1]
     except Exception as err:
         response_data = err
     finally:
