@@ -9,12 +9,12 @@ class ParentalControl:
     def __init__(self, cache):
         self.cache = cache
 
-    def add_blocking(self, domain):
+    def add_blocking(self, domain, ip):
         self.cache.delete_expired_records()
         conn = self.cache.create_connection()
         with conn:
             cursor = conn.cursor()
-            self.cache.insert_row(IP, domain, TTL, TYPE)
+            self.cache.insert_row(ip, domain, TTL, TYPE)
             conn.commit()
             logging.debug("Row inserted- " + domain)
         self.cache.print_cache_table()
@@ -25,7 +25,9 @@ class ParentalControl:
             if self.cache.get_domain_info(domain):
                 self.cache.delete_row(domain)
                 logging.debug('Deleted blocking- ' + domain)
-        self.cache.print_cache_table()
+                self.cache.print_cache_table()
+                return 'DONE'
+            return 'Address was not blocked'
 
     def return_block_list(self):
         conn = self.cache.create_connection()

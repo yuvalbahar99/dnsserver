@@ -6,6 +6,8 @@ from sniffer import Sniffer
 from cache import Cache
 from datetime import datetime, timedelta
 from parentalcontrol import ParentalControl
+from protocol import Protocol
+from users import Users
 import threading
 import queue
 
@@ -19,6 +21,7 @@ PORT = 80
 SERVER_IP = "10.0.0.23"
 # SERVER_IP = "172.16.15.49"
 queue_reqs = queue.Queue()
+COMMAND_LIST = ['S', 'L', 'A', 'R', 'V', 'C']
 
 
 def remove_from_queue():
@@ -114,43 +117,132 @@ def create_cache():
     return cache
 
 
-def handle_client(client_socket, parental_control):
-    request = client_socket.recv(7).decode()
-    print(request)
-    if request.startswith('*start*'):
-        while not request.endswith('*end*'):
-            request += client_socket.recv(1).decode()
-    command = request[7]
-    address = request[8:-5]
+def create_users_table():
+    users_table = Users()
+    users_table.create_connection()
+    users_table.create_tables()
+    # users_table.delete_all_records()
+    users_table.print_users_table()
+    return users_table
+
+
+def handle_client(client_socket, parental_control, users_table):
+    while True:
+        response_data = ''
+        flag = False
+        try:
+            message = client_socket.recv(5).decode()
+            if message.startswith('start'):
+                while not message.endswith('*'):
+                    message += client_socket.recv(1).decode()
+            data_len = message[5:-1]  # data len to receive
+            data_len = int(data_len)
+            if data_len > 0:
+                request = client_socket.recv(data_len).decode()
+                request_elements = request.split('*')
+                command = request_elements[0]
+                if command not in COMMAND_LIST:
+                    response_data = 'ERROR'
+                else:
+                    if command == 'S':
+                        response_data = sign_up_req(request_elements, users_table)
+                    elif command == 'L':
+                        response_data = log_in_req(request_elements, users_table)
+                    elif command == 'A':
+                        response_data = add_blocking_req(request_elements, parental_control)
+                    elif command == 'R':
+                        response_data = remove_blocking_req(request_elements, parental_control)
+                    elif command == 'V':
+                        response_data = view_blocking_list_req(parental_control)
+                    else:  # command = 'C'
+                        flag = True
+                        client_socket.close()
+                        return
+        except:
+            response_data = 'ERROR'
+        finally:
+            if not flag:
+                protocol = Protocol(response_data)
+                response = protocol.add_protocol()
+                client_socket.send(response.encode())
+
+
+def sign_up_req(request_elements, users_table):
+    username = request_elements[1]
+    password = request_elements[2]
+    username_exist = users_table.username_already_exist(username)
+    if not username_exist:
+        users_table.add_user(username, password)
+        response_data = 'DONE'
+    else:
+        response_data = 'username is already exist\ntry to sign in with a different username'
+    return response_data
+
+
+def log_in_req(request_elements, users_table):
+    username = request_elements[1]
+    password = request_elements[2]
+    user_is_valid = users_table.user_is_valid(username, password)
+    if user_is_valid:
+        response_data = 'DONE'
+    else:
+        response_data = 'wrong username or password\ntry again'
+    return response_data
+
+
+def add_blocking_req(request_elements, parental_control):
+    domain = request_elements[1]
+    ip = request_elements[2]
+    if not domain.endswith('.'):
+        domain += '.'
+    # להוסיף בדיקה אם זה לא IP אלא כתובת דומיין, לעשות לה sr1
+
     try:
-        if command == 'A':
-            parental_control.add_blocking(address)
-            response = "*start*DONE*end*"
-        elif command == 'R':
-            parental_control.remove_blocking(address)
-            response = "*start*DONE*end*"
-        else:
-            text_list = ''
-            blocked_list = parental_control.return_block_list()
-            for i in blocked_list:
-                text_list += i + '\n'
-            text_list = text_list[:-1]
-            response = "*start*" + text_list + "*end*"
-    except Exception as e:
-        response = "*start*ERROR*end*"
-    client_socket.send(response.encode())
+        parental_control.add_blocking(domain, ip)
+        response_data = 'DONE'
+    except Exception as err:
+        response_data = err
+    return response_data
 
 
-def run_server(server_socket, parental_control):
+def remove_blocking_req(request_elements, parental_control):
+    domain = request_elements[1]
+    if not domain.endswith('.'):
+        domain += '.'
+    response_data = ''
+    try:
+        response_data = parental_control.remove_blocking(domain)
+    except Exception as err:
+        response_data = err
+    finally:
+        return response_data
+
+
+def view_blocking_list_req(parental_control):
+    response_data = ''
+    try:
+        blocked_list = parental_control.return_block_list()
+        response_data = ''
+        for i in blocked_list:
+            response_data += i + '\n'
+        response_data = response_data[:-1]
+    except Exception as err:
+        response_data = err
+    finally:
+        return response_data
+
+
+def run_server(server_socket, parental_control, users_table):
     while True:
         client_socket, client_address = server_socket.accept()
         print("New connection")
-        client_handler = threading.Thread(target=handle_client, args=(client_socket, parental_control))
+        client_handler = threading.Thread(target=handle_client, args=(client_socket, parental_control, users_table))
         client_handler.start()
 
 
 def main():
     cache = create_cache()
+    users_table = create_users_table()
     parental_control = ParentalControl(cache)
     sniffer = Sniffer(queue_reqs)
     sniff_thread = threading.Thread(target=sniffer.sniffing)
@@ -160,8 +252,9 @@ def main():
     server_socket.bind((SERVER_IP, PORT))
     server_socket.listen()
     print("Server is listening for connections...")
-    server_thread = threading.Thread(target=run_server, args=(server_socket, parental_control))
+    server_thread = threading.Thread(target=run_server, args=(server_socket, parental_control, users_table))
     server_thread.start()
+    """
     with concurrent.futures.ThreadPoolExecutor(max_workers=LIBOT) as executor:
         while True:
             try:
@@ -169,6 +262,7 @@ def main():
                     executor.submit(search_domain_in_cache, cache)
             except Exception as e:
                 logging.debug(f'Error m occurred: {e}')
+    """
 
 
 if __name__ == '__main__':

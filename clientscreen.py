@@ -6,6 +6,7 @@ from tkinter import filedialog
 from tkinter import messagebox
 from tkinter import StringVar
 from PIL import Image, ImageTk
+from protocol import Protocol
 
 SERVER_IP = '10.0.0.23'
 # SERVER_IP = "172.16.15.49"
@@ -15,10 +16,15 @@ PC_FILE_PATH = 'pcimage.jpeg'
 
 class FirstScreen:
     def __init__(self):
+        self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.client_socket.connect((SERVER_IP, PORT))
+
         self.root = tk.Tk()
         self.root.title("parental control")
         # הגדרת המסך בגודל מלא
         self.root.geometry("{0}x{1}+0+0".format(self.root.winfo_screenwidth(), self.root.winfo_screenheight()))
+
+        self.root.protocol("WM_DELETE_WINDOW", self.close_first_screen)
 
         self.logo_img = Image.open(PC_FILE_PATH)
         self.logo_photo = ImageTk.PhotoImage(self.logo_img)
@@ -51,10 +57,19 @@ class FirstScreen:
     def run(self):
         self.root.mainloop()
 
+    def close_first_screen(self):
+        message = 'C'
+        protocol = Protocol(message)
+        message = protocol.add_protocol()
+        self.client_socket.send(message.encode())
+        self.client_socket.close()
+        self.root.destroy()  # סגירת החלון הראשי
+
 
 class SignUpScreen:
     def __init__(self, first_screen):
         self.first_screen = first_screen
+        self.client_socket = first_screen.client_socket
 
         # הגדרת המסך בגודל מלא
         self.signup_screen = tk.Toplevel(self.first_screen.root)
@@ -96,30 +111,54 @@ class SignUpScreen:
         self.signup_button.place(relx=0.5, rely=0.65, anchor="center")
 
     def sign_up(self):
+        print('entered the button')
         username = self.username_entry.get()
         password = self.password_entry.get()
         confirm_password = self.confirm_password_entry.get()
 
-        self.check_validation(username, password, confirm_password)
-
-        # לבנות הודעת בקשת הרשמה לשליחה לשרת
-
-        self.send_request()
-
-        # השרת אמור להחזיר אישור או אי אישור (במקרה שבו קיים כבר משתמש כזה)
-
-        # ניקוי שדות הקלט
         self.username_entry.delete(0, tk.END)
         self.password_entry.delete(0, tk.END)
         self.confirm_password_entry.delete(0, tk.END)
 
-        self.open_user_requests_screen()
+        validation = self.check_validation(username, password, confirm_password)
+        if not validation:
+            return
+
+        self.send_request(username, password)
+
+        server_response = self.client_socket.recv(5).decode()
+        if server_response.startswith('start'):
+            while not server_response.endswith('*'):
+                server_response += self.client_socket.recv(1).decode()
+        data_len = server_response[5:-1]  # data len to receive
+        data_len = int(data_len)
+        if data_len > 0:
+            server_response = self.client_socket.recv(data_len).decode()
+            if server_response == 'DONE':
+                messagebox.showinfo("Message", f"Added New User")
+                self.open_user_requests_screen()
+            elif server_response != 'ERROR':
+                messagebox.showinfo("Message", f"{server_response}")
 
     def check_validation(self, username, password, confirm_password):
-        pass
+        problems = ''
+        if password != confirm_password:
+            problems += 'The passwords do not match\n'
+        if len(username) < 4 or len(password) < 4:
+            problems += "The username and password should be at least 4 letters\n"
+        if '*' in username or '*' in password:
+            problems += "The username and password should not contain '*'"
+        if problems == '':
+            return True
+        else:
+            messagebox.showinfo("Message", f"{problems}")
+            return False
 
-    def send_request(self):
-        pass
+    def send_request(self, username, password):
+        message_data = 'S*' + username + '*' + password
+        protocol = Protocol(message_data)
+        message = protocol.add_protocol()
+        self.client_socket.send(message.encode())
 
     def open_user_requests_screen(self):
         self.signup_screen.withdraw()  # הסתרת מסך ההרשמה
@@ -133,6 +172,7 @@ class SignUpScreen:
 class LogInScreen:
     def __init__(self, first_screen):
         self.first_screen = first_screen
+        self.client_socket = first_screen.client_socket
 
         # הגדרת המסך בגודל מלא
         self.login_screen = tk.Toplevel(self.first_screen.root)
@@ -169,25 +209,47 @@ class LogInScreen:
         username = self.username_entry.get()
         password = self.password_entry.get()
 
-        self.check_validation(username, password)
-
-        # לבנות הודעת בקשת היכנסות לשליחה לשרת
-
-        self.send_request()
-
-        # השרת אמור להחזיר אישור או אי אישור (במקרה שבו הסיסמא ושם המשתמש אינם תואמים)
-
-        # ניקוי שדות הקלט
         self.username_entry.delete(0, tk.END)
         self.password_entry.delete(0, tk.END)
 
-        self.open_user_requests_screen()
+        validation = self.check_validation(username, password)
+        if not validation:
+            return
+
+        self.send_request(username, password)
+
+        # השרת אמור להחזיר אישור או אי אישור (במקרה שבו הסיסמא ושם המשתמש אינם תואמים)
+        server_response = self.client_socket.recv(5).decode()
+        if server_response.startswith('start'):
+            while not server_response.endswith('*'):
+                server_response += self.client_socket.recv(1).decode()
+        data_len = server_response[5:-1]  # data len to receive
+        data_len = int(data_len)
+        if data_len > 0:
+            server_response = self.client_socket.recv(data_len).decode()
+            if server_response == 'DONE':
+                messagebox.showinfo("Message", f"Log in successfully")
+                self.open_user_requests_screen()
+            elif server_response != 'ERROR':
+                messagebox.showinfo("Message", f"{server_response}")
 
     def check_validation(self, username, password):
-        pass
+        problems = ''
+        if len(username) < 4 or len(password) < 4:
+            problems += "The username and password should be at least 4 letters\n"
+        if '*' in username or '*' in password:
+            problems += "The username and password should not contain '*'"
+        if problems == '':
+            return True
+        else:
+            messagebox.showinfo("Message", f"{problems}")
+            return False
 
-    def send_request(self):
-        pass
+    def send_request(self, username, password):
+        message_data = 'L*' + username + '*' + password
+        protocol = Protocol(message_data)
+        message = protocol.add_protocol()
+        self.client_socket.send(message.encode())
 
     def open_user_requests_screen(self):
         self.login_screen.withdraw()  # הסתרת מסך ההרשמה
@@ -200,10 +262,8 @@ class LogInScreen:
 
 class UserRequestsScreen:
     def __init__(self, first_screen):
-        self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.client_socket.connect((SERVER_IP, PORT))
-
         self.first_screen = first_screen
+        self.client_socket = first_screen.client_socket
 
         self.user_requests_screen = tk.Toplevel(self.first_screen.root)
         self.user_requests_screen.title("User Requests")
@@ -232,29 +292,44 @@ class UserRequestsScreen:
         self.view_button.place(relx=0.5, rely=0.55, anchor="center")
 
     def view_blocked_list(self):
-        pass
+        message_data = 'V'
+        protocol = Protocol(message_data)
+        message = protocol.add_protocol()
+        self.client_socket.send(message.encode())
 
-    def send_req(self, address, command):
-        pass
+        server_response = self.client_socket.recv(5).decode()
+        if server_response.startswith('start'):
+            while not server_response.endswith('*'):
+                server_response += self.client_socket.recv(1).decode()
+        data_len = server_response[5:-1]  # data len to receive
+        data_len = int(data_len)
+        if data_len > 0:
+            server_response = self.client_socket.recv(data_len).decode()
+            if server_response != []:
+                messagebox.showinfo("Message", f"{server_response}")
+            else:
+                messagebox.showinfo("Message", "blocked address list is empty")
 
     def open_add_blocking_screen(self):
         self.user_requests_screen.withdraw()  # הסתרת מסך ההרשמה
-        add_blocking_screen = AddBlockingScreen(self.user_requests_screen)  # יצירת מסך הבקשות של המשתמש
+        add_blocking_screen = AddBlockingScreen(self.user_requests_screen, self.client_socket)
+        # יצירת מסך הבקשות של המשתמש
 
     def open_remove_blocking_screen(self):
         self.user_requests_screen.withdraw()  # הסתרת מסך ההרשמה
-        remove_blocking_screen = RemoveBlockingScreen(self.user_requests_screen)  # יצירת מסך הבקשות של המשתמש
+        remove_blocking_screen = RemoveBlockingScreen(self.user_requests_screen, self.client_socket)
+        # יצירת מסך הבקשות של המשתמש
 
     def close_user_requests_screen(self):
-        self.client_socket.close()
         logging.debug('close socket')
         self.user_requests_screen.destroy()
         self.first_screen.root.deiconify()
 
 
 class RemoveBlockingScreen:
-    def __init__(self, user_req_screen):
+    def __init__(self, user_req_screen, client_socket):
         self.user_req_screen = user_req_screen
+        self.client_socket = client_socket
 
         # הגדרת המסך בגודל מלא
         self.remove_blocking_screen = tk.Toplevel(self.user_req_screen)
@@ -272,30 +347,50 @@ class RemoveBlockingScreen:
 
         self.address_entry_var = StringVar()
         self.address_entry = tk.Entry(self.remove_blocking_screen, textvariable=self.address_entry_var)
-        self.address_entry.place(relx=0.5, rely=0.55, anchor="center")
+        self.address_entry.place(relx=0.5, rely=0.5, anchor="center")
 
         self.address_label = tk.Label(self.remove_blocking_screen, text=" Blocked Address: ")
-        self.address_label.place(relx=0.45, rely=0.55, anchor="e")
+        self.address_label.place(relx=0.45, rely=0.5, anchor="e")
 
         self.remove_address_button = tk.Button(self.remove_blocking_screen, text="  Remove Blocking  ",
                                                command=self.remove_blocking)
-        self.remove_address_button.place(relx=0.5, rely=0.6, anchor="center")
+        self.remove_address_button.place(relx=0.5, rely=0.55, anchor="center")
 
     def remove_blocking(self):
         address = self.address_entry.get()
-        self.check_validation(address)
-
-        # הפיכת הכתובת לבקשה
-        self.send_request()
-
         self.address_entry.delete(0, tk.END)
+
+        validation = self.check_validation(address)
+        if not validation:
+            return
+
+        self.send_request(address)
+
+        server_response = self.client_socket.recv(5).decode()
+        if server_response.startswith('start'):
+            while not server_response.endswith('*'):
+                server_response += self.client_socket.recv(1).decode()
+        data_len = server_response[5:-1]  # data len to receive
+        data_len = int(data_len)
+        if data_len > 0:
+            server_response = self.client_socket.recv(data_len).decode()
+            if server_response == 'DONE':
+                messagebox.showinfo("Message", "Removed the blocking")
+            else:
+                messagebox.showinfo("Message", f"{server_response}")
         self.close_remove_blocking_screen()
 
     def check_validation(self, address):
-        pass
+        if '*' in address:
+            messagebox.showinfo("Message", "The address should not contain '*'")
+            return False
+        return True
 
-    def send_request(self):
-        pass
+    def send_request(self, address):
+        message_data = 'R*' + address
+        protocol = Protocol(message_data)
+        message = protocol.add_protocol()
+        self.client_socket.send(message.encode())
 
     def close_remove_blocking_screen(self):
         self.remove_blocking_screen.destroy()
@@ -303,8 +398,9 @@ class RemoveBlockingScreen:
 
 
 class AddBlockingScreen:
-    def __init__(self, user_req_screen):
+    def __init__(self, user_req_screen, client_socket):
         self.user_req_screen = user_req_screen
+        self.client_socket = client_socket
 
         # הגדרת המסך בגודל מלא
         self.add_blocking_screen = tk.Toplevel(self.user_req_screen)
@@ -341,20 +437,64 @@ class AddBlockingScreen:
     def add_blocking(self):
         address = self.address_entry.get()
         new_address = self.new_address_entry.get()
-        self.check_validation(address, new_address)
-
-        # הפיכת הכתובת לבקשה
-        self.send_request()
 
         self.address_entry.delete(0, tk.END)
+        self.new_address_entry.delete(0, tk.END)
+
+        validation = self.check_validation(address, new_address)
+        if not validation:
+            return
+
+        self.send_request(address, new_address)
+
+        server_response = self.client_socket.recv(5).decode()
+        if server_response.startswith('start'):
+            while not server_response.endswith('*'):
+                server_response += self.client_socket.recv(1).decode()
+        data_len = server_response[5:-1]  # data len to receive
+        data_len = int(data_len)
+        if data_len > 0:
+            server_response = self.client_socket.recv(data_len).decode()
+            if server_response == 'DONE':
+                messagebox.showinfo("Message", "Added the new blocking")
+            else:
+                messagebox.showinfo("Message", f"{server_response}")
         self.close_add_blocking_screen()
 
     def check_validation(self, address, new_address):
         # לוודא שהכניסו ב- New כתובת של IP!!!!
-        pass
+        problems = ''
+        if '*' in address:
+            problems += "The address should not contain '*'"
+        if not self.check_ip(new_address):
+            problems += "New address is not valid-\nIt should be 4 numbers separate with a dot ('.')\n" \
+                        "Also each num should be in range of 0-255"
+        if problems != '':
+            messagebox.showinfo("Message", f'{problems}')
+            return False
+        return True
 
-    def send_request(self):
-        pass
+    def check_ip(self, new_address):
+        flag = True
+        if '.' in new_address:
+            numbers = new_address.split('.')
+            if len(numbers) != 4:
+                flag = False
+            for num in numbers:
+                if num.isdigit():
+                    if int(num) < 0 or int(num) > 255:
+                        flag = False
+                else:
+                    flag = False
+        else:
+            flag = False
+        return flag
+
+    def send_request(self, address, new_address):
+        message_data = 'A*' + address + '*' + new_address
+        protocol = Protocol(message_data)
+        message = protocol.add_protocol()
+        self.client_socket.send(message.encode())
 
     def close_add_blocking_screen(self):
         self.add_blocking_screen.destroy()
