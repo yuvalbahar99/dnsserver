@@ -1,0 +1,81 @@
+2023-06-01 19:49:07,425 DEBUG Thread-1 sniffing
+2023-06-01 19:51:55,533 DEBUG Thread-1 sniffing
+2023-06-01 19:53:17,315 DEBUG Thread-1 sniffing
+2023-06-01 19:55:58,176 DEBUG Thread-1 sniffing
+2023-06-01 19:58:17,598 DEBUG Thread-1 b'client.wns.windows.com.' - before into requests queue
+2023-06-01 19:58:17,614 DEBUG Thread-1 b'client.wns.windows.com.' - after into requests queue
+2023-06-01 19:58:17,617 DEBUG ThreadPoolExecutor-0_0 b'client.wns.windows.com.' - out of requests queue
+2023-06-01 19:58:17,813 DEBUG Thread-1 b'www.msftconnecttest.com.' - before into requests queue
+2023-06-01 19:58:17,821 DEBUG Thread-1 b'www.msftconnecttest.com.' - after into requests queue
+2023-06-01 19:58:17,837 DEBUG ThreadPoolExecutor-0_1 b'www.msftconnecttest.com.' - out of requests queue
+2023-06-01 19:58:17,900 DEBUG ThreadPoolExecutor-0_0 client.wns.windows.com.before handle - not in cache
+2023-06-01 19:58:17,901 DEBUG ThreadPoolExecutor-0_0 b'client.wns.windows.com.' - waiting for response of the ip
+2023-06-01 19:58:18,075 DEBUG ThreadPoolExecutor-0_1 www.msftconnecttest.com.before handle - not in cache
+2023-06-01 19:58:18,077 DEBUG ThreadPoolExecutor-0_1 b'www.msftconnecttest.com.' - waiting for response of the ip
+2023-06-01 19:58:18,253 DEBUG ThreadPoolExecutor-0_0 b'client.wns.windows.com.' - received answer(ip address)
+2023-06-01 19:58:18,360 DEBUG ThreadPoolExecutor-0_1 b'www.msftconnecttest.com.' - received answer(ip address)
+2023-06-01 19:58:18,677 DEBUG Thread-1 b'us04xmpp1.zoom.us.' - before into requests queue
+2023-06-01 19:58:18,693 DEBUG Thread-1 b'us04xmpp1.zoom.us.' - after into requests queue
+2023-06-01 19:58:18,700 DEBUG ThreadPoolExecutor-0_2 b'us04xmpp1.zoom.us.' - out of requests queue
+2023-06-01 19:58:18,819 DEBUG ThreadPoolExecutor-0_2 us04xmpp1.zoom.us.before handle - not in cache
+2023-06-01 19:58:18,819 DEBUG ThreadPoolExecutor-0_2 b'us04xmpp1.zoom.us.' - waiting for response of the ip
+2023-06-01 19:58:18,994 DEBUG ThreadPoolExecutor-0_1 b'www.msftconnecttest.com.' - the ip was sent to the client
+2023-06-01 19:58:18,994 DEBUG ThreadPoolExecutor-0_2 b'us04xmpp1.zoom.us.' - received answer(ip address)
+2023-06-01 19:58:18,994 DEBUG ThreadPoolExecutor-0_0 b'client.wns.windows.com.' - the ip was sent to the client
+2023-06-01 19:58:19,056 DEBUG ThreadPoolExecutor-0_2 b'us04xmpp1.zoom.us.' - the ip was sent to the client
+2023-06-01 19:58:19,278 DEBUG ThreadPoolExecutor-0_1 www.msftconnecttest.com. into the cache
+2023-06-01 19:58:19,326 DEBUG ThreadPoolExecutor-0_0 client.wns.windows.com. into the cache
+2023-06-01 19:58:19,401 DEBUG Thread-1 b'client.wns.windows.com.' - before into requests queue
+2023-06-01 19:58:19,401 DEBUG Thread-1 b'client.wns.windows.com.' - after into requests queue
+2023-06-01 19:58:19,403 DEBUG Thread-1 b'mtalk.google.com.' - before into requests queue
+2023-06-01 19:58:19,403 DEBUG Thread-1 b'mtalk.google.com.' - after into requests queue
+2023-06-01 19:58:19,405 DEBUG Thread-1 b'alive.github.com.' - before into requests queue
+2023-06-01 19:58:19,405 DEBUG Thread-1 b'alive.github.com.' - after into requests queue
+2023-06-01 19:58:19,422 DEBUG ThreadPoolExecutor-0_3 b'client.wns.windows.com.' - out of requests queue
+2023-06-01 19:58:19,429 DEBUG ThreadPoolExecutor-0_2 us04xmpp1.zoom.us. into the cache
+2023-06-01 19:58:19,429 DEBUG ThreadPoolExecutor-0_2 b'mtalk.google.com.' - out of requests queue
+2023-06-01 19:58:19,429 DEBUG ThreadPoolExecutor-0_4 b'alive.github.com.' - out of requests queue
+2023-06-01 19:58:19,437 DEBUG ThreadPoolExecutor-0_3 (628, '20.199.120.151,', 'client.wns.windows.com.', '2023-06-01 19:58:52.030086', '1')
+2023-06-01 19:58:19,437 DEBUG ThreadPoolExecutor-0_3 client.wns.windows.com. out of the cache
+2023-06-01 19:58:19,437 DEBUG ThreadPoolExecutor-0_4 alive.github.com.before handle - not in cache
+2023-06-01 19:58:19,439 DEBUG ThreadPoolExecutor-0_4 b'alive.github.com.' - waiting for response of the ip
+2023-06-01 19:58:19,485 DEBUG ThreadPoolExecutor-0_2 (205, "b'mobile-gtalk.l.google.com.',", 'mtalk.google.com.', '2023-06-02 06:45:32.804236', '5')
+2023-06-01 19:58:19,485 DEBUG ThreadPoolExecutor-0_2 mtalk.google.com. out of the cache
+2023-06-01 19:58:19,650 WARNING Thread-1 DNS RR prematured end (ofs=66, len=66)
+2023-06-01 19:58:20,182 WARNING Thread-1 DNS RR prematured end (ofs=66, len=66)
+2023-06-01 19:58:20,257 DEBUG Thread-1 b'geo.prod.do.dsp.mp.microsoft.com.' - before into requests queue
+2023-06-01 19:58:20,257 DEBUG Thread-1 b'geo.prod.do.dsp.mp.microsoft.com.' - after into requests queue
+2023-06-01 19:58:20,273 DEBUG ThreadPoolExecutor-0_6 b'geo.prod.do.dsp.mp.microsoft.com.' - out of requests queue
+2023-06-01 19:58:19,485 WARNING ThreadPoolExecutor-0_4 more DNS RR prematured end (ofs=66, len=66)
+2023-06-01 19:58:20,464 DEBUG ThreadPoolExecutor-0_6 geo.prod.do.dsp.mp.microsoft.com.before handle - not in cache
+2023-06-01 19:58:20,480 DEBUG ThreadPoolExecutor-0_6 b'geo.prod.do.dsp.mp.microsoft.com.' - waiting for response of the ip
+2023-06-01 19:58:20,530 DEBUG ThreadPoolExecutor-0_4 b'alive.github.com.' - no response from the DNS server
+2023-06-01 19:58:20,874 DEBUG ThreadPoolExecutor-0_6 b'geo.prod.do.dsp.mp.microsoft.com.' - received answer(ip address)
+2023-06-01 19:58:20,987 DEBUG ThreadPoolExecutor-0_6 b'geo.prod.do.dsp.mp.microsoft.com.' - the ip was sent to the client
+2023-06-01 19:58:21,208 DEBUG ThreadPoolExecutor-0_6 geo.prod.do.dsp.mp.microsoft.com. into the cache
+2023-06-01 19:58:22,647 DEBUG Thread-1 b'alive.github.com.' - before into requests queue
+2023-06-01 19:58:22,662 DEBUG Thread-1 b'alive.github.com.' - after into requests queue
+2023-06-01 19:58:22,663 DEBUG Thread-1 b'mtalk.google.com.' - before into requests queue
+2023-06-01 19:58:22,663 DEBUG ThreadPoolExecutor-0_7 b'alive.github.com.' - out of requests queue
+2023-06-01 19:58:22,663 DEBUG Thread-1 b'mtalk.google.com.' - after into requests queue
+2023-06-01 19:58:22,663 DEBUG ThreadPoolExecutor-0_0 b'mtalk.google.com.' - out of requests queue
+2023-06-01 19:58:23,009 DEBUG ThreadPoolExecutor-0_7 alive.github.com.before handle - not in cache
+2023-06-01 19:58:23,009 DEBUG ThreadPoolExecutor-0_7 b'alive.github.com.' - waiting for response of the ip
+2023-06-01 19:58:23,025 DEBUG ThreadPoolExecutor-0_0 (205, "b'mobile-gtalk.l.google.com.',", 'mtalk.google.com.', '2023-06-02 06:45:32.804236', '5')
+2023-06-01 19:58:23,041 DEBUG ThreadPoolExecutor-0_0 mtalk.google.com. out of the cache
+2023-06-01 19:58:24,163 DEBUG ThreadPoolExecutor-0_7 b'alive.github.com.' - no response from the DNS server
+2023-06-01 20:02:04,776 DEBUG Thread-1 sniffing
+2023-06-01 20:37:13,979 DEBUG Thread-1 sniffing
+2023-06-01 20:44:21,856 DEBUG Thread-1 sniffing
+2023-06-01 20:46:43,158 DEBUG Thread-1 sniffing
+2023-06-01 20:54:19,385 DEBUG Thread-1 sniffing
+2023-06-01 20:57:25,404 DEBUG Thread-1 sniffing
+2023-06-01 20:58:57,664 DEBUG Thread-1 sniffing
+2023-06-01 21:00:21,402 DEBUG Thread-1 sniffing
+2023-06-01 21:01:55,495 DEBUG Thread-1 sniffing
+2023-06-01 21:05:20,992 DEBUG Thread-1 sniffing
+2023-06-01 21:25:39,408 DEBUG Thread-1 sniffing
+2023-06-01 21:46:06,866 DEBUG Thread-1 sniffing
+2023-06-01 21:48:05,470 DEBUG Thread-1 sniffing
+2023-06-01 21:55:25,224 DEBUG Thread-1 sniffing
+2023-06-01 22:17:57,061 DEBUG Thread-1 sniffing
