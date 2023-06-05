@@ -3,7 +3,7 @@ HTTP Server
 Author: Yuval Bahar and Talya Gross
 Purpose: Server connect to the client- and get a request message from him.
 If the message is valid and not one of the special the website is supposed to get on the screen.
-Also the client sends requested and the server sends the right response.
+Also, the client sends requested and the server sends the right response.
 """
 
 # ---------------------------------------------- IMPORTS ----------------------------------------------

@@ -11,8 +11,8 @@ from PIL import Image, ImageTk
 from protocol import Protocol
 
 # SERVER_IP = '10.0.0.23'
-# SERVER_IP = "172.16.15.49"
-SERVER_IP = '172.16.15.111'
+SERVER_IP = "172.16.15.49"
+# SERVER_IP = '172.16.15.111'
 PORT = 80
 PC_FILE_PATH = 'pcimage.jpeg'
 
@@ -23,7 +23,7 @@ class FirstScreen:
         contex.check_hostname = False
         contex.verify_mode = ssl.CERT_NONE
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.client_socket_tls = contex.wrap_socket(client_socket, server_hostname= SERVER_IP)
+        self.client_socket_tls = contex.wrap_socket(client_socket, server_hostname=SERVER_IP)
         self.client_socket_tls.connect((SERVER_IP, PORT))
 
         self.root = tk.Tk()

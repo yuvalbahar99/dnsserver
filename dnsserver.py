@@ -21,8 +21,8 @@ FILENAMELOG = 'dnslog.log'
 date_format = '%Y-%m-%d %H:%M:%S.%f'
 PORT = 80
 # SERVER_IP = "10.0.0.23"
-SERVER_IP = '172.16.15.111'
-# SERVER_IP = "172.16.15.49"
+# SERVER_IP = '172.16.15.111'
+SERVER_IP = "172.16.15.49"
 queue_reqs = queue.Queue()
 COMMAND_LIST = ['S', 'L', 'A', 'R', 'V', 'C']
 CRT_FILE = 'certificate.crt'
@@ -62,7 +62,7 @@ def search_domain_in_cache(cache):
     current_packet = remove_from_queue()
     domain = current_packet[DNSQR].qname.decode()
     cache_data = cache.get_domain_info(domain)  # if domain id not exist, get_domain_info returns None
-    if cache_data:  # check for answer in the cache (so the request won't be send out
+    if cache_data:  # check for answer in the cache (so the request won't be sent out
         out_of_cache(current_packet, cache_data, domain)
     else:
         logging.debug(domain + 'before handle - not in cache')
@@ -274,7 +274,6 @@ def main():
     print("Server is listening for connections...")
     server_thread = threading.Thread(target=run_server, args=(parental_control, users_table, ssock))
     server_thread.start()
-    """
     with concurrent.futures.ThreadPoolExecutor(max_workers=LIBOT) as executor:
         while True:
             try:
@@ -282,7 +281,6 @@ def main():
                     executor.submit(search_domain_in_cache, cache)
             except Exception as e:
                 logging.debug(f'Error m occurred: {e}')
-    """
 
 
 if __name__ == '__main__':
