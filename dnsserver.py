@@ -10,18 +10,23 @@ from protocol import Protocol
 from users import Users
 import threading
 import queue
+import socket
+import ssl
 
 LIBOT = 80
-# DNS_IP = '172.16.255.254'
-DNS_IP = '10.0.0.138'
+DNS_IP = '172.16.255.254'
+# DNS_IP = '10.0.0.138'
 FORMAT = '%(asctime)s %(levelname)s %(threadName)s %(message)s'
 FILENAMELOG = 'dnslog.log'
 date_format = '%Y-%m-%d %H:%M:%S.%f'
 PORT = 80
-SERVER_IP = "10.0.0.23"
+# SERVER_IP = "10.0.0.23"
+SERVER_IP = '172.16.15.111'
 # SERVER_IP = "172.16.15.49"
 queue_reqs = queue.Queue()
 COMMAND_LIST = ['S', 'L', 'A', 'R', 'V', 'C']
+CRT_FILE = 'certificate.crt'
+PRIVATE_KEY_FILE = 'privateKey.key'
 
 
 def remove_from_queue():
@@ -169,7 +174,13 @@ def handle_client(client_socket, parental_control, users_table):
 
 def sign_up_req(request_elements, users_table):
     username = request_elements[1]
-    password = request_elements[2]
+    index = 0
+    password = ''
+    for element in request_elements:
+        if index >= 2:
+            password += element + '*'
+        index += 1
+    password = password[:-1]
     username_exist = users_table.username_already_exist(username)
     if not username_exist:
         users_table.add_user(username, password)
@@ -181,7 +192,13 @@ def sign_up_req(request_elements, users_table):
 
 def log_in_req(request_elements, users_table):
     username = request_elements[1]
-    password = request_elements[2]
+    index = 0
+    password = ''
+    for element in request_elements:
+        if index >= 2:
+            password += element + '*'
+        index += 1
+    password = password[:-1]
     user_is_valid = users_table.user_is_valid(username, password)
     if user_is_valid:
         response_data = 'DONE'
@@ -232,9 +249,9 @@ def view_blocking_list_req(parental_control):
         return response_data
 
 
-def run_server(server_socket, parental_control, users_table):
+def run_server(parental_control, users_table, ssock):
     while True:
-        client_socket, client_address = server_socket.accept()
+        client_socket, client_addr = ssock.accept()
         print("New connection")
         client_handler = threading.Thread(target=handle_client, args=(client_socket, parental_control, users_table))
         client_handler.start()
@@ -248,11 +265,14 @@ def main():
     sniff_thread = threading.Thread(target=sniffer.sniffing)
     sniff_thread.start()
     print('sniffing')
+    context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    context.load_cert_chain(CRT_FILE, PRIVATE_KEY_FILE)
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.bind((SERVER_IP, PORT))
     server_socket.listen()
+    ssock = context.wrap_socket(server_socket, server_side=True)
     print("Server is listening for connections...")
-    server_thread = threading.Thread(target=run_server, args=(server_socket, parental_control, users_table))
+    server_thread = threading.Thread(target=run_server, args=(parental_control, users_table, ssock))
     server_thread.start()
     """
     with concurrent.futures.ThreadPoolExecutor(max_workers=LIBOT) as executor:

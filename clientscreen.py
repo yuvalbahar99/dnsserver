@@ -1,5 +1,7 @@
+import hashlib
 import logging
 import socket
+import ssl
 import subprocess
 import tkinter as tk
 from tkinter import filedialog
@@ -8,16 +10,21 @@ from tkinter import StringVar
 from PIL import Image, ImageTk
 from protocol import Protocol
 
-SERVER_IP = '10.0.0.23'
+# SERVER_IP = '10.0.0.23'
 # SERVER_IP = "172.16.15.49"
+SERVER_IP = '172.16.15.111'
 PORT = 80
 PC_FILE_PATH = 'pcimage.jpeg'
 
 
 class FirstScreen:
     def __init__(self):
-        self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.client_socket.connect((SERVER_IP, PORT))
+        contex = ssl.create_default_context()
+        contex.check_hostname = False
+        contex.verify_mode = ssl.CERT_NONE
+        client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.client_socket_tls = contex.wrap_socket(client_socket, server_hostname= SERVER_IP)
+        self.client_socket_tls.connect((SERVER_IP, PORT))
 
         self.root = tk.Tk()
         self.root.title("parental control")
@@ -61,15 +68,15 @@ class FirstScreen:
         message = 'C'
         protocol = Protocol(message)
         message = protocol.add_protocol()
-        self.client_socket.send(message.encode())
-        self.client_socket.close()
+        self.client_socket_tls.send(message.encode())
+        self.client_socket_tls.close()
         self.root.destroy()  # סגירת החלון הראשי
 
 
 class SignUpScreen:
     def __init__(self, first_screen):
         self.first_screen = first_screen
-        self.client_socket = first_screen.client_socket
+        self.client_socket_tls = first_screen.client_socket_tls
 
         # הגדרת המסך בגודל מלא
         self.signup_screen = tk.Toplevel(self.first_screen.root)
@@ -116,25 +123,24 @@ class SignUpScreen:
         password = self.password_entry.get()
         confirm_password = self.confirm_password_entry.get()
 
-        self.username_entry.delete(0, tk.END)
-        self.password_entry.delete(0, tk.END)
-        self.confirm_password_entry.delete(0, tk.END)
-
         validation = self.check_validation(username, password, confirm_password)
         if not validation:
             return
 
         self.send_request(username, password)
 
-        server_response = self.client_socket.recv(5).decode()
+        server_response = self.client_socket_tls.recv(5).decode()
         if server_response.startswith('start'):
             while not server_response.endswith('*'):
-                server_response += self.client_socket.recv(1).decode()
+                server_response += self.client_socket_tls.recv(1).decode()
         data_len = server_response[5:-1]  # data len to receive
         data_len = int(data_len)
         if data_len > 0:
-            server_response = self.client_socket.recv(data_len).decode()
+            server_response = self.client_socket_tls.recv(data_len).decode()
             if server_response == 'DONE':
+                self.username_entry.delete(0, tk.END)
+                self.password_entry.delete(0, tk.END)
+                self.confirm_password_entry.delete(0, tk.END)
                 messagebox.showinfo("Message", f"Added New User")
                 self.open_user_requests_screen()
             elif server_response != 'ERROR':
@@ -155,10 +161,11 @@ class SignUpScreen:
             return False
 
     def send_request(self, username, password):
-        message_data = 'S*' + username + '*' + password
+        hashed_password = hashlib.sha256(password.encode()).hexdigest()
+        message_data = 'S*' + username + '*' + hashed_password
         protocol = Protocol(message_data)
         message = protocol.add_protocol()
-        self.client_socket.send(message.encode())
+        self.client_socket_tls.send(message.encode())
 
     def open_user_requests_screen(self):
         self.signup_screen.withdraw()  # הסתרת מסך ההרשמה
@@ -172,7 +179,7 @@ class SignUpScreen:
 class LogInScreen:
     def __init__(self, first_screen):
         self.first_screen = first_screen
-        self.client_socket = first_screen.client_socket
+        self.client_socket_tls = first_screen.client_socket_tls
 
         # הגדרת המסך בגודל מלא
         self.login_screen = tk.Toplevel(self.first_screen.root)
@@ -209,9 +216,6 @@ class LogInScreen:
         username = self.username_entry.get()
         password = self.password_entry.get()
 
-        self.username_entry.delete(0, tk.END)
-        self.password_entry.delete(0, tk.END)
-
         validation = self.check_validation(username, password)
         if not validation:
             return
@@ -219,15 +223,17 @@ class LogInScreen:
         self.send_request(username, password)
 
         # השרת אמור להחזיר אישור או אי אישור (במקרה שבו הסיסמא ושם המשתמש אינם תואמים)
-        server_response = self.client_socket.recv(5).decode()
+        server_response = self.client_socket_tls.recv(5).decode()
         if server_response.startswith('start'):
             while not server_response.endswith('*'):
-                server_response += self.client_socket.recv(1).decode()
+                server_response += self.client_socket_tls.recv(1).decode()
         data_len = server_response[5:-1]  # data len to receive
         data_len = int(data_len)
         if data_len > 0:
-            server_response = self.client_socket.recv(data_len).decode()
+            server_response = self.client_socket_tls.recv(data_len).decode()
             if server_response == 'DONE':
+                self.username_entry.delete(0, tk.END)
+                self.password_entry.delete(0, tk.END)
                 messagebox.showinfo("Message", f"Log in successfully")
                 self.open_user_requests_screen()
             elif server_response != 'ERROR':
@@ -246,10 +252,11 @@ class LogInScreen:
             return False
 
     def send_request(self, username, password):
-        message_data = 'L*' + username + '*' + password
+        hashed_password = hashlib.sha256(password.encode()).hexdigest()
+        message_data = 'L*' + username + '*' + hashed_password
         protocol = Protocol(message_data)
         message = protocol.add_protocol()
-        self.client_socket.send(message.encode())
+        self.client_socket_tls.send(message.encode())
 
     def open_user_requests_screen(self):
         self.login_screen.withdraw()  # הסתרת מסך ההרשמה
@@ -263,7 +270,7 @@ class LogInScreen:
 class UserRequestsScreen:
     def __init__(self, first_screen):
         self.first_screen = first_screen
-        self.client_socket = first_screen.client_socket
+        self.client_socket_tls = first_screen.client_socket_tls
 
         self.user_requests_screen = tk.Toplevel(self.first_screen.root)
         self.user_requests_screen.title("User Requests")
@@ -295,29 +302,27 @@ class UserRequestsScreen:
         message_data = 'V'
         protocol = Protocol(message_data)
         message = protocol.add_protocol()
-        self.client_socket.send(message.encode())
+        self.client_socket_tls.send(message.encode())
 
-        server_response = self.client_socket.recv(5).decode()
+        server_response = self.client_socket_tls.recv(5).decode()
         if server_response.startswith('start'):
             while not server_response.endswith('*'):
-                server_response += self.client_socket.recv(1).decode()
+                server_response += self.client_socket_tls.recv(1).decode()
         data_len = server_response[5:-1]  # data len to receive
         data_len = int(data_len)
         if data_len > 0:
-            server_response = self.client_socket.recv(data_len).decode()
+            server_response = self.client_socket_tls.recv(data_len).decode()
             messagebox.showinfo("Message", f"{server_response}")
         else:
             messagebox.showinfo("Message", "blocked addresses list is empty")
 
     def open_add_blocking_screen(self):
         self.user_requests_screen.withdraw()  # הסתרת מסך ההרשמה
-        add_blocking_screen = AddBlockingScreen(self.user_requests_screen, self.client_socket)
-        # יצירת מסך הבקשות של המשתמש
+        add_blocking_screen = AddBlockingScreen(self.user_requests_screen, self.client_socket_tls)
 
     def open_remove_blocking_screen(self):
         self.user_requests_screen.withdraw()  # הסתרת מסך ההרשמה
-        remove_blocking_screen = RemoveBlockingScreen(self.user_requests_screen, self.client_socket)
-        # יצירת מסך הבקשות של המשתמש
+        remove_blocking_screen = RemoveBlockingScreen(self.user_requests_screen, self.client_socket_tls)
 
     def close_user_requests_screen(self):
         logging.debug('close socket')
@@ -326,9 +331,9 @@ class UserRequestsScreen:
 
 
 class RemoveBlockingScreen:
-    def __init__(self, user_req_screen, client_socket):
+    def __init__(self, user_req_screen, client_socket_tls):
         self.user_req_screen = user_req_screen
-        self.client_socket = client_socket
+        self.client_socket_tls = client_socket_tls
 
         # הגדרת המסך בגודל מלא
         self.remove_blocking_screen = tk.Toplevel(self.user_req_screen)
@@ -365,14 +370,14 @@ class RemoveBlockingScreen:
 
         self.send_request(address)
 
-        server_response = self.client_socket.recv(5).decode()
+        server_response = self.client_socket_tls.recv(5).decode()
         if server_response.startswith('start'):
             while not server_response.endswith('*'):
-                server_response += self.client_socket.recv(1).decode()
+                server_response += self.client_socket_tls.recv(1).decode()
         data_len = server_response[5:-1]  # data len to receive
         data_len = int(data_len)
         if data_len > 0:
-            server_response = self.client_socket.recv(data_len).decode()
+            server_response = self.client_socket_tls.recv(data_len).decode()
             if server_response == 'DONE':
                 messagebox.showinfo("Message", "Removed the blocking")
             else:
@@ -389,7 +394,7 @@ class RemoveBlockingScreen:
         message_data = 'R*' + address
         protocol = Protocol(message_data)
         message = protocol.add_protocol()
-        self.client_socket.send(message.encode())
+        self.client_socket_tls.send(message.encode())
 
     def close_remove_blocking_screen(self):
         self.remove_blocking_screen.destroy()
@@ -397,9 +402,9 @@ class RemoveBlockingScreen:
 
 
 class AddBlockingScreen:
-    def __init__(self, user_req_screen, client_socket):
+    def __init__(self, user_req_screen, client_socket_tls):
         self.user_req_screen = user_req_screen
-        self.client_socket = client_socket
+        self.client_socket_tls = client_socket_tls
 
         # הגדרת המסך בגודל מלא
         self.add_blocking_screen = tk.Toplevel(self.user_req_screen)
@@ -446,14 +451,14 @@ class AddBlockingScreen:
 
         self.send_request(address, new_address)
 
-        server_response = self.client_socket.recv(5).decode()
+        server_response = self.client_socket_tls.recv(5).decode()
         if server_response.startswith('start'):
             while not server_response.endswith('*'):
-                server_response += self.client_socket.recv(1).decode()
+                server_response += self.client_socket_tls.recv(1).decode()
         data_len = server_response[5:-1]  # data len to receive
         data_len = int(data_len)
         if data_len > 0:
-            server_response = self.client_socket.recv(data_len).decode()
+            server_response = self.client_socket_tls.recv(data_len).decode()
             if server_response == 'DONE':
                 messagebox.showinfo("Message", "Added the new blocking")
             else:
@@ -493,7 +498,7 @@ class AddBlockingScreen:
         message_data = 'A*' + address + '*' + new_address
         protocol = Protocol(message_data)
         message = protocol.add_protocol()
-        self.client_socket.send(message.encode())
+        self.client_socket_tls.send(message.encode())
 
     def close_add_blocking_screen(self):
         self.add_blocking_screen.destroy()
