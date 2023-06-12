@@ -21,8 +21,8 @@ FILENAMELOG = 'dnslog.log'
 date_format = '%Y-%m-%d %H:%M:%S.%f'
 PORT = 80
 # SERVER_IP = "10.0.0.23"
-# SERVER_IP = '172.16.15.111'
-SERVER_IP = "172.16.15.49"
+SERVER_IP = '172.16.15.111'
+# SERVER_IP = "172.16.15.49"
 queue_reqs = queue.Queue()
 COMMAND_LIST = ['S', 'L', 'A', 'R', 'V', 'C']
 CRT_FILE = 'certificate.crt'
@@ -30,11 +30,11 @@ PRIVATE_KEY_FILE = 'privateKey.key'
 
 
 def remove_from_queue():
-    if not queue_reqs.empty():
-        packet1 = queue_reqs.get()
-        logging.debug(str(packet1[DNSQR].qname) + ' - out of requests queue')
-        return packet1
-    return None
+    # if not queue_reqs.empty():
+    packet1 = queue_reqs.get()
+    logging.debug(str(packet1[DNSQR].qname) + ' - out of requests queue')
+    return packet1
+    # return None
 
 
 def handle_request(current_packet):
@@ -43,13 +43,13 @@ def handle_request(current_packet):
         if current_packet is not None:
             ip_client = current_packet[IP].src
             my_dns = IP(dst=DNS_IP) / UDP(dport=53, sport=current_packet[UDP].sport) / current_packet[DNS]
-            logging.debug(str(current_packet[DNSQR].qname) + ' - waiting for response of the ip')
+            logging.debug(str(current_packet[DNSQR].qname) + ' - waiting for response of the answer')
             response = sr1(my_dns, timeout=1)
             if response:
-                logging.debug(str(current_packet[DNSQR].qname) + ' - received answer(ip address)')
+                logging.debug(str(current_packet[DNSQR].qname) + ' - received answer')
                 res_client = IP(dst=ip_client) / UDP(sport=53, dport=current_packet[UDP].sport) / response[DNS]
                 send(res_client)
-                logging.debug(str(current_packet[DNSQR].qname) + ' - the ip was sent to the client')
+                logging.debug(str(current_packet[DNSQR].qname) + ' - the answer was sent to the client')
                 return response
             else:
                 logging.debug(str(current_packet[DNSQR].qname) + ' - no response from the DNS server')
@@ -58,55 +58,93 @@ def handle_request(current_packet):
     return None
 
 
-def search_domain_in_cache(cache):
-    current_packet = remove_from_queue()
-    domain = current_packet[DNSQR].qname.decode()
-    cache_data = cache.get_domain_info(domain)  # if domain id not exist, get_domain_info returns None
-    if cache_data:  # check for answer in the cache (so the request won't be sent out
-        out_of_cache(current_packet, cache_data, domain)
+def search_domain_in_cache(cache, current_packet):
+    # current_packet = remove_from_queue()
+    packet_type = current_packet[DNSQR].qtype
+    address = ''
+    cache_data = None
+    if packet_type == 1:
+        address = current_packet[DNSQR].qname.decode()
+        cache_data = cache.get_domain_info(address)  # if domain is not exist, get_domain_info returns None
+    if packet_type == 1:
+        address = current_packet[DNSQR].qname.decode()
+        cache_data = cache.get_ip_info(address)  # if ip is not exist, get_ip_info returns None
+    if cache_data:  # check for answer in the cache (so the request won't be sent out)
+        out_of_cache(current_packet, cache_data, address)
     else:
-        logging.debug(domain + 'before handle - not in cache')
+        logging.debug(address + ' handle: address is not in cache')
         response = handle_request(current_packet)
         if response is not None:
-            into_cache(response, cache, domain)
+            into_cache(response, cache, address)
 
 
-def into_cache(current_packet, cache, domain):
-    text_ips = ""
-    for answer in current_packet[DNS].an:
-        ip_address = str(answer.rdata)
-        text_ips += ip_address + ','
+def into_cache(current_packet, cache, address):
     pac_type = current_packet[DNS].an.type
+    text_ips = ""
+    text_domains = ""
+    if pac_type == 1:
+        text_domains = address
+        text_ips = ""
+        for answer in current_packet[DNS].an:
+            ip_address = str(answer.rdata)
+            text_ips += ip_address + ','
+        text_ips = text_ips[:-1]
+    if pac_type == 12:
+        text_ips = address
+        text_domains = ""
+        for answer in current_packet[DNS].an:
+            domain_address = str(answer.rdata)
+            text_domains += domain_address + ','
+        text_domains = text_domains[:-1]
     seconds_to_leave = current_packet[DNS].an.ttl
     now = datetime.now()
     delta = timedelta(seconds=seconds_to_leave)
     ttl = now + delta
-    cache.insert_row(text_ips, domain, ttl, pac_type)
-    logging.debug(domain + ' into the cache')
-    cache.print_cache_table()
+    if text_ips != '' and text_domains != '':
+        cache.insert_row(text_ips, text_domains, ttl, pac_type)
+        logging.debug(address + ' into the cache')
+        cache.print_cache_table()
 
 
-def out_of_cache(current_packet, cache_data, domain):
+def out_of_cache(current_packet, cache_data, address):
     packet_id = current_packet[DNS].id
     logging.debug(cache_data)
     if cache_data:
-        logging.debug(domain + ' out of the cache')
+        logging.debug(address + ' out of the cache')
+        domain_text = cache_data[2]
+        if "," in domain_text:
+            domain_addr_list = domain_text.split(',')
+            domains_count = len(domain_addr_list)
+        else:
+            domain_addr_list = domain_text
+            domains_count = 1
         ip_text = cache_data[1]
         if "," in ip_text:
             ip_addr_list = ip_text.split(',')
-            count = len(ip_addr_list)
+            ips_count = len(ip_addr_list)
         else:
             ip_addr_list = ip_text
-            count = 1
+            ips_count = 1
         pac_type = int(cache_data[4])
         ttl = datetime.strptime(cache_data[3], date_format)
         now = datetime.now()
         seconds_to_leave = int((ttl - now).total_seconds())
         if seconds_to_leave > 9467077826:  # if ttl is longer than 3 year
             seconds_to_leave = 10
+        count = 0
+        pac_qname = []
+        pac_rrname = []
+        if pac_type == 1:
+            count = ips_count
+            pac_qname = domain_addr_list
+            pac_rrname = ip_addr_list
+        if pac_type == 12:
+            count = domains_count
+            pac_qname = ip_addr_list
+            pac_rrname = domain_addr_list
         dns_packet = DNS(qr=1, opcode="QUERY", aa=1, ra=1, ancount=count, id=packet_id,
-                         qd=DNSQR(qname=domain, qtype=pac_type),
-                         an=DNSRR(rrname=domain, type=pac_type, rdata=ip_addr_list, ttl=seconds_to_leave))
+                         qd=DNSQR(qname=pac_qname, qtype=pac_type),
+                         an=DNSRR(rrname=pac_rrname, type=pac_type, rdata=ip_addr_list, ttl=seconds_to_leave))
         ip_client = current_packet[IP].src
         res_client = IP(dst=ip_client) / UDP(sport=53, dport=current_packet[UDP].sport) / dns_packet
         # logging.debug(res_client.show())
@@ -277,8 +315,9 @@ def main():
     with concurrent.futures.ThreadPoolExecutor(max_workers=LIBOT) as executor:
         while True:
             try:
-                if not queue_reqs.empty():
-                    executor.submit(search_domain_in_cache, cache)
+                # if not queue_reqs.empty():
+                current_packet = remove_from_queue()
+                executor.submit(search_domain_in_cache, cache, current_packet)
             except Exception as e:
                 logging.debug(f'Error m occurred: {e}')
 

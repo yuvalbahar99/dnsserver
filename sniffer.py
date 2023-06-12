@@ -15,7 +15,8 @@ class Sniffer:
     def fil(self, packet1):
         return DNS in packet1 and IP in packet1 and packet1[IP].src != IP_ADDRESS and packet1[DNS].opcode == 0 \
                and packet1[DNS].qr == 0 and packet1[DNS].ancount == 0 and packet1.dport == 53 and \
-               packet1[DNS].nscount == 0 and packet1[DNS].arcount == 0 and packet1[DNSQR][0].qtype == 1
+               packet1[DNS].nscount == 0 and packet1[DNS].arcount == 0 and (packet1[DNSQR][0].qtype == 1
+                                                                            or packet1[DNSQR][0].qtype == 12)
         # and packet1[DNSQR].qname == 'ynet.co.il.'.encode()
 
     def add_to_queue(self, packet1):

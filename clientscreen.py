@@ -10,8 +10,8 @@ from tkinter import StringVar
 from PIL import Image, ImageTk
 from protocol import Protocol
 
-# SERVER_IP = '10.0.0.23'
-SERVER_IP = "172.16.15.49"
+SERVER_IP = '10.0.0.23'
+# SERVER_IP = "172.16.15.49"
 # SERVER_IP = '172.16.15.111'
 PORT = 80
 PC_FILE_PATH = 'pcimage.jpeg'
